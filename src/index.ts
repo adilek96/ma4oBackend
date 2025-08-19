@@ -3,7 +3,7 @@ import { Hono} from 'hono'
 import "dotenv/config";
 
 import auth from './api/v1/auth/auth.js'
-const port = process.env.PORT || 3000
+
 
 
 
@@ -19,7 +19,7 @@ app.get('/', (c) => {
 
 serve({
   fetch: app.fetch,
-  port: Number(port)
+  port: process.env.PORT+ 
 }, (info) => {
   console.log(`Server is running on http://localhost:${info.port}`)
 })

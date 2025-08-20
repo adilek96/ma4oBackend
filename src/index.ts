@@ -16,7 +16,11 @@ import me from './api/v1/user/me.js';
 const app = new Hono()
 
 // cors
-app.use('/api/*', cors())
+app.use('/api/v1/*', cors({
+  origin: '*', // можно указать конкретный фронт, например: 'https://t.me'
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization'],
+}))
 
 // middleware
 app.use('/api/v1/user/*', authMiddleware)

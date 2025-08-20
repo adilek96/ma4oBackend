@@ -10,9 +10,11 @@
     "@hono/node-server": "^1.18.2",
     "@telegram-apps/init-data-node": "^2.0.10",
     "dotenv": "^17.2.1",
-    "hono": "^4.9.2"
+    "hono": "^4.9.2",
+    "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.11.17",
     "tsx": "^4.7.1",
     "typescript": "^5.8.3"

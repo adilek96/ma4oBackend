@@ -52,6 +52,7 @@ model Profile {
   gender    Gender
   birthDate DateTime
   age       Int
+  languages String[]
 
   // Местоположение
   country   String
@@ -61,11 +62,11 @@ model Profile {
 
   // О себе
   bio       String?  @db.Text
-  hobbies   String[] // Массив хобби
   interests String[] // Массив интересов
 
   // Цель знакомства
-  datingGoal DatingGoal
+  datingGoal    DatingGoal
+  seekingGender GenderPreference
 
   // Фотографии
   photos Photo[]
@@ -74,7 +75,6 @@ model Profile {
   education  String?
   occupation String?
   height     Int? // в см
-  weight     Int? // в кг
   smoking    Smoking?
   drinking   Drinking?
   religion   String?
@@ -183,7 +183,7 @@ enum Gender {
 enum GenderPreference {
   MALE
   FEMALE
-  BOTH
+  ANY
   OTHER
 }
 
@@ -199,6 +199,7 @@ enum LocationPreference {
   SAME_CITY
   SAME_COUNTRY
   ANYWHERE
+  NEARBY
 }
 
 enum Smoking {

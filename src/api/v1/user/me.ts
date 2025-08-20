@@ -18,12 +18,21 @@ me.get("/user/me", async (c) => {
       return c.json({ error: 'Server configuration error' }, 500);
     }
 
-    // тут  делаем запрос в БД по userId
+    // тут делаем запрос в БД по userId
     const userData = await prisma.user.findUnique({
       where: {
         telegramId: Number(user.userId)
+      },
+      include: {
+        profile: true
       }
     })
+
+    // проверяем найден ли пользователь в БД
+    if (!userData) {
+      console.error('User not found in database:', user.userId);
+      return c.json({ error: "User not found" }, 404);
+    }
 
     return c.json({
         data: userData,

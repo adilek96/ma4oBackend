@@ -11,13 +11,14 @@ import authMiddleware from './middleware.js';
 import me from './api/v1/user/me.js';
 
 
-const aplication = process.env.APPLICATION
+const application = process.env.APPLICATION || process.env.NODE_ENV || 'development'
+console.log('Application environment:', application)
 
 const app = new Hono()
 
 // cors
 app.use('/api/v1/*', cors({
-  origin: aplication === 'production' ? ['https://www.ma4o.com','https://ma4o.vercel.app'] : ['http://localhost:5173'],
+  origin: application === 'production' ? ['https://www.ma4o.com','https://ma4o.vercel.app'] : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001'],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization', 'Accept'],
   credentials: true,

@@ -24,14 +24,17 @@ refresh.post('/auth/refresh', async (c) => {
             { expiresIn: '60m' }
           )
         
+        // определяем настройки куков в зависимости от окружения
+        const isProduction = process.env.NODE_ENV === 'production';
+        
         // устанавливаем куки
         setCookie(c, 'access_token', accessToken, {
             httpOnly: true,
-            secure: true,        // только по HTTPS
-            sameSite: 'strict',  // защита от CSRF
+            secure: isProduction,        // только по HTTPS в продакшене
+            sameSite: 'none',  // разрешаем кросс-доменные запросы
             maxAge: 60 * 60,     // срок жизни 1 час
             path: '/',           // доступно во всём приложении
-          })
+        })
     } catch (error) {
         // возвращаем ошибку 401 если токен не валидный
         return c.json({ error: 'refresh_token is invalid' }, 401)

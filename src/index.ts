@@ -8,6 +8,7 @@ import auth from './api/v1/auth/auth.js'
 import refresh from './api/v1/auth/refresh.js'
 import createProfile from './api/v1/user/profile/createProfile.js'
 import authMiddleware from './middleware.js';
+import me from './api/v1/user/me.js';
 
 
 
@@ -24,6 +25,7 @@ app.use('/api/v1/user/*', authMiddleware)
 app.route('/api/v1', auth)
 app.route('/api/v1', refresh)
 app.route('/api/v1', createProfile)
+app.route('/api/v1', me)
 
 serve({
   fetch: app.fetch,

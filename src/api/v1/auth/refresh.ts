@@ -30,7 +30,7 @@ refresh.post('/auth/refresh', async (c) => {
         // устанавливаем куки
         setCookie(c, 'access_token', accessToken, {
             httpOnly: true,
-            secure: isProduction,        // только по HTTPS в продакшене
+            secure: true,        // обязательно для SameSite=None
             sameSite: 'none',  // разрешаем кросс-доменные запросы
             maxAge: 60 * 60,     // срок жизни 1 час
             path: '/',           // доступно во всём приложении

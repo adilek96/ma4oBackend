@@ -17,7 +17,7 @@ const app = new Hono()
 
 // cors
 app.use('/api/v1/*', cors({
-  origin: aplication === 'production' ? ['https://www.ma4o.com','https://ma4o.vercel.app'] : ['http://localhost:3000'],
+  origin: aplication === 'production' ? ['https://www.ma4o.com','https://ma4o.vercel.app'] : ['http://localhost:5173'],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization', 'Accept'],
   credentials: true,

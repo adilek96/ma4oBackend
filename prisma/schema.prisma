@@ -1,0 +1,216 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String  @id @default(cuid())
+  telegramId Int     @unique
+  username   String? @unique
+  firstName  String
+  lastName   String?
+  email      String? @unique
+  isNew      Boolean @default(true)
+
+  // Профиль пользователя
+  profile Profile?
+
+  // Предпочтения для поиска
+  preferences Preferences?
+
+  // Матчи
+  sentMatches     Match[] @relation("UserSentMatches")
+  receivedMatches Match[] @relation("UserReceivedMatches")
+
+  // Лайки
+  sentLikes     Like[] @relation("UserSentLikes")
+  receivedLikes Like[] @relation("UserReceivedLikes")
+
+  // Пропуски
+  sentSkips     Skip[] @relation("UserSentSkips")
+  receivedSkips Skip[] @relation("UserReceivedSkips")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Profile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Основная информация
+  gender    Gender
+  birthDate DateTime
+  age       Int
+
+  // Местоположение
+  country   String
+  city      String
+  latitude  Float?
+  longitude Float?
+
+  // О себе
+  bio       String?  @db.Text
+  hobbies   String[] // Массив хобби
+  interests String[] // Массив интересов
+
+  // Цель знакомства
+  datingGoal DatingGoal
+
+  // Фотографии
+  photos Photo[]
+
+  // Дополнительная информация
+  education  String?
+  occupation String?
+  height     Int? // в см
+  weight     Int? // в кг
+  smoking    Smoking?
+  drinking   Drinking?
+  religion   String?
+
+  // Настройки профиля
+  isActive   Boolean @default(true)
+  isVerified Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("profiles")
+}
+
+model Preferences {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Предпочтения по полу
+  genderPreference GenderPreference
+
+  // Предпочтения по возрасту
+  minAge Int
+  maxAge Int
+
+  // Географические предпочтения
+  locationPreference LocationPreference
+  maxDistance        Int? // в км, null = не важно
+
+  // Дополнительные фильтры
+  datingGoalPreference DatingGoal[]
+  smokingPreference    Smoking?
+  drinkingPreference   Drinking?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("preferences")
+}
+
+model Photo {
+  id        String  @id @default(cuid())
+  profileId String
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  url      String
+  filename String
+  order    Int    @default(0) // Порядок фотографий
+
+  createdAt DateTime @default(now())
+
+  @@map("photos")
+}
+
+model Match {
+  id         String @id @default(cuid())
+  senderId   String
+  sender     User   @relation("UserSentMatches", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User   @relation("UserReceivedMatches", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  isMutual Boolean @default(false)
+  chatUrl  String? // Ссылка на чат в Telegram
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([senderId, receiverId])
+  @@map("matches")
+}
+
+model Like {
+  id         String @id @default(cuid())
+  senderId   String
+  sender     User   @relation("UserSentLikes", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User   @relation("UserReceivedLikes", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([senderId, receiverId])
+  @@map("likes")
+}
+
+model Skip {
+  id         String @id @default(cuid())
+  senderId   String
+  sender     User   @relation("UserSentSkips", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User   @relation("UserReceivedSkips", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([senderId, receiverId])
+  @@map("skips")
+}
+
+// Enums
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum GenderPreference {
+  MALE
+  FEMALE
+  BOTH
+  OTHER
+}
+
+enum DatingGoal {
+  RELATIONSHIP
+  FRIENDSHIP
+  CASUAL
+  MARRIAGE
+  NETWORKING
+}
+
+enum LocationPreference {
+  SAME_CITY
+  SAME_COUNTRY
+  ANYWHERE
+}
+
+enum Smoking {
+  YES
+  NO
+  OCCASIONALLY
+  QUIT
+}
+
+enum Drinking {
+  YES
+  NO
+  OCCASIONALLY
+  SOCIAL
+}

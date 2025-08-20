@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { getCookie } from "hono/cookie";
+import { prisma } from '../../../lib/prisma.js'
 
 const me = new Hono();
 
@@ -18,15 +18,15 @@ me.get("/user/me", async (c) => {
       return c.json({ error: 'Server configuration error' }, 500);
     }
 
-    // тут обычно делаем запрос в БД по userId
-    // const userData = await db.user.findUnique({ where: { id: user.userId } })
+    // тут  делаем запрос в БД по userId
+    const userData = await prisma.user.findUnique({
+      where: {
+        telegramId: Number(user.userId)
+      }
+    })
 
     return c.json({
-      data: {
-        userId: user.userId,
-        // username: userData?.username,
-        // avatar: userData?.avatar,
-      },
+        data: userData,
     });
   } catch (error) {
     console.error('Me route error:', error);
@@ -34,21 +34,6 @@ me.get("/user/me", async (c) => {
   }
 });
 
-// Диагностический маршрут для проверки куков
-me.get("/user/me/debug", async (c) => {
-  const accessToken = getCookie(c, 'access_token');
-  const refreshToken = getCookie(c, 'refresh_token');
-  
-  return c.json({
-    debug: {
-      hasAccessToken: !!accessToken,
-      hasRefreshToken: !!refreshToken,
-      accessTokenLength: accessToken ? accessToken.length : 0,
-      refreshTokenLength: refreshToken ? refreshToken.length : 0,
-      allCookies: c.req.header('cookie'),
-      userAgent: c.req.header('user-agent'),
-    }
-  });
-});
+
 
 export default me;

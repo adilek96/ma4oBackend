@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { isValid} from '@telegram-apps/init-data-node';
 import jwtLib from 'jsonwebtoken'
 import { setCookie } from 'hono/cookie'
+import { prisma } from '../../../lib/prisma.js'
 
 
 
@@ -23,6 +24,7 @@ export type TelegramUser = {
     language_code?: string;
     allows_write_to_pm?: boolean;
     photo_url?: string;
+    email?: string;
 };
   
 
@@ -123,13 +125,39 @@ auth.post('/auth/tg', async (c) => {
             path: '/',           // доступно во всём приложении
         })
 
+
+        
+
+
+
+        // проверяем есть ли пользователь в базе данных
+        const dbSaveUser = await prisma.user.findUnique({
+            where: {
+                telegramId: userObj.id
+            }
+        })
+        
+        // сохраняем пользователя в базу данных если его нет
+        if(!dbSaveUser){
+            console.log('пользователь не найден в базе данных, создаем нового')
+             await prisma.user.create({
+                data: {
+                    telegramId: userObj.id,
+                    firstName: userObj.first_name,
+                    username: userObj.username,
+                    lastName : userObj.last_name,
+                    email: userObj.email,
+                    isNew: true,
+                }
+            })
+        }
+
+
+
+      
+
         return c.json({
             message: 'success',
-            user: {
-                id: userObj.id,
-                first_name: userObj.first_name,
-                username: userObj.username
-            }
         })
 
     } catch (error) {

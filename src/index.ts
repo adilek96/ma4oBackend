@@ -19,8 +19,9 @@ const app = new Hono()
 app.use('/api/v1/*', cors({
   origin: ['https://www.ma4o.com','https://ma4o.vercel.app'],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization'],
+  allowHeaders: ['Content-Type', 'Authorization', 'Accept'],
   credentials: true,
+  maxAge: 86400,
 }))
 
 // middleware

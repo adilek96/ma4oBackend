@@ -105,13 +105,11 @@ auth.post('/auth/tg', async (c) => {
             { expiresIn: '7d' }
         )
 
-        // определяем настройки куков в зависимости от окружения
-        const isProduction = process.env.NODE_ENV === 'production';
-        
+    
         // устанавливаем куки
         setCookie(c, 'access_token', accessToken, {
             httpOnly: true,
-            secure: isProduction,        // только по HTTPS в продакшене
+            secure: true,        // только по HTTPS в продакшене
             sameSite: 'none',  // разрешаем кросс-доменные запросы
             maxAge: 60 * 60,     // срок жизни 1 час
             path: '/',           // доступно во всём приложении
@@ -119,7 +117,7 @@ auth.post('/auth/tg', async (c) => {
 
         setCookie(c, 'refresh_token', refreshToken, {
             httpOnly: true,
-            secure: isProduction,        // только по HTTPS в продакшене
+            secure: true,        // только по HTTPS в продакшене
             sameSite: 'none',  // разрешаем кросс-доменные запросы
             maxAge: 60 * 60 * 24 * 7,     // срок жизни 1 неделя
             path: '/',           // доступно во всём приложении

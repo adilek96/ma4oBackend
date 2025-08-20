@@ -112,7 +112,7 @@ auth.post('/auth/tg', async (c) => {
         setCookie(c, 'access_token', accessToken, {
             httpOnly: true,
             secure: isProduction,        // только по HTTPS в продакшене
-            sameSite: 'lax',  // защита от CSRF
+            sameSite: 'none',  // защита от CSRF
             maxAge: 60 * 60,     // срок жизни 1 час
             path: '/',           // доступно во всём приложении
             domain: isProduction ? '.ma4o.com' : undefined, // домен для продакшена
@@ -121,7 +121,7 @@ auth.post('/auth/tg', async (c) => {
         setCookie(c, 'refresh_token', refreshToken, {
             httpOnly: true,
             secure: isProduction,        // только по HTTPS в продакшене
-            sameSite: 'lax',  // защита от CSRF
+            sameSite: 'none',  // защита от CSRF
             maxAge: 60 * 60 * 24 * 7,     // срок жизни 1 неделя
             path: '/',           // доступно во всём приложении
             domain: isProduction ? '.ma4o.com' : undefined, // домен для продакшена

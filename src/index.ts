@@ -17,9 +17,10 @@ const app = new Hono()
 
 // cors
 app.use('/api/v1/*', cors({
-  origin: '*', // можно указать конкретный фронт, например: 'https://t.me'
+  origin: 'https://www.ma4o.com', 
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
 }))
 
 // middleware

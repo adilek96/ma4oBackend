@@ -17,7 +17,7 @@ const app = new Hono()
 
 // cors
 app.use('/api/v1/*', cors({
-  origin: 'https://www.ma4o.com', 
+  origin: ['https://www.ma4o.com','https://ma4o.vercel.app'],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
   credentials: true,

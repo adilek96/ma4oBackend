@@ -35,7 +35,7 @@ me.get("/user/me", async (c) => {
 });
 
 // Диагностический маршрут для проверки куков
-me.get("/user/debug", async (c) => {
+me.get("/user/me/debug", async (c) => {
   const accessToken = getCookie(c, 'access_token');
   const refreshToken = getCookie(c, 'refresh_token');
   

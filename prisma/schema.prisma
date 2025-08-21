@@ -77,7 +77,6 @@ model Profile {
   height     Int? // в см
   smoking    Smoking?
   drinking   Drinking?
-  religion   String?
 
   // Настройки профиля
   isActive   Boolean @default(true)

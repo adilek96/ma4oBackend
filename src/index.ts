@@ -9,6 +9,7 @@ import refresh from './api/v1/auth/refresh.js'
 import createProfile from './api/v1/user/profile/createProfile.js'
 import authMiddleware from './middleware.js';
 import me from './api/v1/user/me.js';
+import createPreferences from './api/v1/user/preferences/createPreferences.js';
 
 
 const application = process.env.APPLICATION || process.env.NODE_ENV || 'development'
@@ -32,6 +33,8 @@ app.use('/api/v1/user/*', authMiddleware)
 app.route('/api/v1', auth)
 app.route('/api/v1', refresh)
 app.route('/api/v1', createProfile)
+app.route('/api/v1', createPreferences)
+// app.route('/api/v1', uploadPhoto)
 app.route('/api/v1', me)
 
 serve({

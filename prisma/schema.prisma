@@ -11,13 +11,14 @@ datasource db {
 }
 
 model User {
-  id         String  @id @default(cuid())
-  telegramId Int     @unique
-  username   String? @unique
-  firstName  String
-  lastName   String?
-  email      String? @unique
-  isNew      Boolean @default(true)
+  id            String  @id @default(cuid())
+  telegramId    Int     @unique
+  username      String? @unique
+  firstName     String
+  lastName      String?
+  email         String? @unique
+  isNew         Boolean @default(true)
+  isPreferences Boolean @default(false)
 
   // Профиль пользователя
   profile Profile?
@@ -63,10 +64,6 @@ model Profile {
   // О себе
   bio       String?  @db.Text
   interests String[] // Массив интересов
-
-  // Цель знакомства
-  datingGoal    DatingGoal
-  seekingGender GenderPreference
 
   // Фотографии
   photos Photo[]
@@ -116,14 +113,11 @@ model Preferences {
 }
 
 model Photo {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   profileId String
-  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-
-  url      String
-  filename String
-  order    Int    @default(0) // Порядок фотографий
-
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  url       String
+  filename  String
   createdAt DateTime @default(now())
 
   @@map("photos")
@@ -202,15 +196,17 @@ enum LocationPreference {
 }
 
 enum Smoking {
-  YES
-  NO
+  NEVER
   OCCASIONALLY
+  REGULARLY
   QUIT
+  PREFER_NOT_TO_SAY
 }
 
 enum Drinking {
-  YES
-  NO
+  NEVER
   OCCASIONALLY
-  SOCIAL
+  REGULARLY
+  QUIT
+  PREFER_NOT_TO_SAY
 }

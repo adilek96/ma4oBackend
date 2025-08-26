@@ -24,7 +24,9 @@ me.get("/user/me", async (c) => {
         telegramId: Number(user.userId)
       },
       include: {
-        profile: true
+        profile: true,
+        preferences: true,
+     
       }
     })
 

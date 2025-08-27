@@ -26,6 +26,9 @@ model User {
   // Предпочтения для поиска
   preferences Preferences?
 
+  // Фотографии
+  photos Photo[]
+
   // Матчи
   sentMatches     Match[] @relation("UserSentMatches")
   receivedMatches Match[] @relation("UserReceivedMatches")
@@ -64,9 +67,6 @@ model Profile {
   // О себе
   bio       String?  @db.Text
   interests String[] // Массив интересов
-
-  // Фотографии
-  photos Photo[]
 
   // Дополнительная информация
   education  String?
@@ -114,10 +114,11 @@ model Preferences {
 
 model Photo {
   id        String   @id @default(cuid())
-  profileId String
-  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   url       String
   filename  String
+  isMain    Boolean  @default(false)
   createdAt DateTime @default(now())
 
   @@map("photos")

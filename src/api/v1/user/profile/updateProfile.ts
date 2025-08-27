@@ -2,9 +2,9 @@ import { Hono } from "hono";
 import { prisma } from "../../../../lib/prisma.js";
 
 
-const createProfile = new Hono()
+const updateProfile = new Hono()
 
-createProfile.post('/user/profile/create', async (c) => {
+updateProfile.put('/user/profile/update', async (c) => {
     const user = (c as any).get('user')
     const data = await c.req.json()
 
@@ -27,11 +27,11 @@ createProfile.post('/user/profile/create', async (c) => {
         }
 
         // используем upsert для создания или обновления профиля
-        const profile = await prisma.profile.upsert({
+        const profile = await prisma.profile.update({
             where: {
                 userId: dbUser.id
             },
-            update: {
+            data: {
                 gender: data.gender.toUpperCase(),
                 birthDate: new Date(data.birthDate),
                 age: Math.abs(new Date().getFullYear() - new Date(data.birthDate).getFullYear()),
@@ -48,40 +48,25 @@ createProfile.post('/user/profile/create', async (c) => {
                 education: data.education,
                 occupation: data.occupation,
             },
-            create: {
-                userId: dbUser.id,
-                gender: data.gender.toUpperCase(),
-                birthDate: new Date(data.birthDate),
-                age: Math.abs(new Date().getFullYear() - new Date(data.birthDate).getFullYear()),
-                country: data.country,
-                city: data.city,
-                latitude: data.location?.latitude,
-                longitude: data.location?.longitude,
-                bio: data.bio,
-                height: data.height,
-                languages: data.languages,
-                interests: data.interests,
-                drinking: data.drinking?.toUpperCase(),
-                smoking: data.smoking?.toUpperCase(),
-                education: data.education,
-                occupation: data.occupation,
-            },
+            
         })
 
         if(!profile){
             return c.json({ error: 'Profile not created' }, 400)
         } 
 
+        
         await prisma.user.update({
-           where: {
-            id: dbUser.id
-           },
-           data: {
-            firstName: data.firstName,
-            lastName: data.lastName,
-            isNew: false
-           }
-        })
+            where: {
+             id: dbUser.id
+            },
+            data: {
+             firstName: data.firstName,
+             lastName: data.lastName,
+            }
+         })
+
+       
 
     return c.json({
         message: 'success'
@@ -94,4 +79,4 @@ createProfile.post('/user/profile/create', async (c) => {
 })
 
 
-export default createProfile;
+export default updateProfile;

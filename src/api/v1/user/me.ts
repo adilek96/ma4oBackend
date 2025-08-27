@@ -26,6 +26,7 @@ me.get("/user/me", async (c) => {
       include: {
         profile: true,
         preferences: true,
+        photos: true
      
       }
     })

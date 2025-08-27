@@ -6,7 +6,7 @@ import { randomUUID } from "crypto"
 const uploadPhoto = new Hono()
 
 uploadPhoto.post("/user/photo/upload", async (c) => {
-    const storageUrl = process.env.BLOB_STORAGE_URL
+  const storageUrl = process.env.BLOB_STORAGE_URL
   try {
     const user = (c as any).get("user")
     if (!user) return c.json({ error: "Unauthorized" }, 401)
@@ -22,14 +22,14 @@ uploadPhoto.post("/user/photo/upload", async (c) => {
     if (!profile) return c.json({ error: "Profile not found" }, 400)
 
     const body = await c.req.parseBody()
-    
+
     // Собираем все файлы из body
     const uploadedFiles: any[] = []
-    
+
     // Проверяем разные возможные ключи
     Object.keys(body).forEach(key => {
       const value = body[key]
-      
+
       if (key === 'files' || key.startsWith('files[') || key.startsWith('file')) {
         if (Array.isArray(value)) {
           uploadedFiles.push(...value)
@@ -45,21 +45,21 @@ uploadPhoto.post("/user/photo/upload", async (c) => {
     const maxSize = 5 * 1024 * 1024 // 5MB
 
 
-   
- 
+
+
     // Параллельная обработка файлов
     const createdPhotos = await Promise.all(
       uploadedFiles.map(async (file) => {
         if (!(file instanceof File)) return null
         if (!allowedTypes.includes(file.type)) return null
         if (file.size > maxSize) return null
-  
+
         const fileExtension = file.name.split(".").pop()
         const fileName = `${dbUser.id}/${randomUUID()}.${fileExtension}`
         const arrayBuffer = await file.arrayBuffer()
         const fileBuffer = Buffer.from(arrayBuffer)
 
-      
+
         // Загружаем в MinIO
         await minioClient.putObject("ma4o", fileName, fileBuffer, file.size, {
           "Content-Type": file.type,
@@ -74,15 +74,15 @@ uploadPhoto.post("/user/photo/upload", async (c) => {
             url: `${storageUrl}/ma4o/${fileName}`,
           },
         })
-      
+
         return photoRecord
       })
     )
 
     const successfulPhotos = createdPhotos.filter(photo => photo !== null)
 
-    return c.json({ 
-      message: "success", 
+    return c.json({
+      message: "success",
       photos: successfulPhotos,
       count: successfulPhotos.length
     })

@@ -6,6 +6,7 @@ import { randomUUID } from "crypto"
 const uploadPhoto = new Hono()
 
 uploadPhoto.post("/user/photo/upload", async (c) => {
+    const storageUrl = process.env.BLOB_STORAGE_URL
   try {
     const user = (c as any).get("user")
     if (!user) return c.json({ error: "Unauthorized" }, 401)
@@ -70,7 +71,7 @@ uploadPhoto.post("/user/photo/upload", async (c) => {
           data: {
             userId: dbUser.id,
             filename: fileName,
-            url: `ma4o/${fileName}`,
+            url: `${storageUrl}/ma4o/${fileName}`,
           },
         })
       

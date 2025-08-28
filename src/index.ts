@@ -14,6 +14,8 @@ import uploadPhoto from './api/v1/user/photo/uploadPhoto.js';
 import deletePhoto from './api/v1/user/photo/deletePhoto.js';
 import updatePhoto from './api/v1/user/photo/updatePhoto.js';
 import updateProfile from './api/v1/user/profile/updateProfile.js';
+import updatePreferences from './api/v1/user/preferences/updatePreferences.js';
+import search from './api/v1/search/search.js';
 
 const application = process.env.APPLICATION || process.env.NODE_ENV || 'development'
 console.log('Application environment:', application)
@@ -31,6 +33,7 @@ app.use('/api/v1/*', cors({
 
 // middleware
 app.use('/api/v1/user/*', authMiddleware)
+app.use('/api/v1/search/*', authMiddleware)
 
 // подключение роутов
 app.route('/api/v1', auth)
@@ -41,6 +44,8 @@ app.route('/api/v1', uploadPhoto)
 app.route('/api/v1', deletePhoto)
 app.route('/api/v1', updatePhoto)
 app.route('/api/v1', updateProfile)
+app.route('/api/v1', updatePreferences)
+app.route('/api/v1', search)
 app.route('/api/v1', me)
 
 serve({

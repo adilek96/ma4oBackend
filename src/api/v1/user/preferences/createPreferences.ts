@@ -9,32 +9,11 @@ createPreferences.post('/user/preferences/create', async (c) => {
     const user = (c as any).get('user')
     const data = await c.req.json()
 
-// datingGoalPreference
-// "RELATIONSHIP"
-// drinkingPreference
-// "NEVER"
-// genderPreference
-// "male"
-// locationPreference
-// "SAME_COUNTRY"
-// maxAge
-// 35
-// maxDistance
-// 26
-// minAge
-// 18
-// smokingPreference
-// "NEVER"
-// userId
-// "cmekeej0p0000iu7c7oyrgl9j"
 
     if(!user){
         return c.json({ error: 'Unauthorized' }, 401)
     }
 
-    // const validGenderPreferences = ['MALE', 'FEMALE', 'ANY', 'OTHER'];
-    // const validDatingGoalPreferences = ['RELATIONSHIP', 'FRIENDSHIP', 'CASUAL', 'MARRIAGE', 'NETWORKING'];
-    // const validLocationPreferences = ['SAME_CITY', 'SAME_COUNTRY', 'ANYWHERE', 'NEARBY'];
 
     try {
        // Находим пользователя в БД по Telegram ID

@@ -103,8 +103,8 @@ model Preferences {
 
   // Дополнительные фильтры
   datingGoalPreference DatingGoal[]
-  smokingPreference    Smoking?
-  drinkingPreference   Drinking?
+  smokingPreference    SmokingPreference?
+  drinkingPreference   DrinkingPreference?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -210,4 +210,16 @@ enum Drinking {
   REGULARLY
   QUIT
   PREFER_NOT_TO_SAY
+}
+
+enum SmokingPreference {
+  ACCEPTABLE
+  UNACCEPTABLE
+  NEUTRAL
+}
+
+enum DrinkingPreference {
+  ACCEPTABLE
+  UNACCEPTABLE
+  NEUTRAL
 }

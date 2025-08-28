@@ -7,6 +7,8 @@ me.get("/user/me", async (c) => {
   try {
     // получаем данные пользователя из контекста (установленные middleware)
     const user = (c as any).get('user') as { userId: string };
+
+   
     
     if (!user || !user.userId) {
       return c.json({ error: "Unauthorized" }, 401);

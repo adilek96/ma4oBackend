@@ -71,11 +71,21 @@ uploadPhoto.post("/user/photo/upload", async (c) => {
         const arrayBuffer = await file.arrayBuffer()
         const fileBuffer = Buffer.from(arrayBuffer)
 
-
-        // Загружаем в MinIO
+        console.log("Файлы проверены начинается загрузка в minio")
+        try {
+          // Загружаем в MinIO
         await minioClient.putObject("ma4o", fileName, fileBuffer, file.size, {
           "Content-Type": file.type,
         })
+        } catch (error) {
+          console.error("Ошибка при загрузке в minio:", error)
+          return null
+        }
+        console.log("Файлы загружены в minio добавляем в бд")
+
+        console.log("user.id", dbUser.id)
+        console.log("fileName", fileName)
+        console.log("url", `${storageUrl}/ma4o/${fileName}`)
 
         // Сохраняем в БД 
         // в качестве урл передаем только имя бакета и файла так как на фронте идет проксирование на адресс сервера минио
@@ -86,12 +96,16 @@ uploadPhoto.post("/user/photo/upload", async (c) => {
             url: `${storageUrl}/ma4o/${fileName}`,
           },
         })
+        console.log("Файлы добавлены в бд", photoRecord)
 
         return photoRecord
       })
     )
 
+    console.log("загрузка фотографий завершена", createdPhotos)
     const successfulPhotos = createdPhotos.filter(photo => photo !== null)
+
+    console.log("успешные фотографии", successfulPhotos)
 
     return c.json({
       message: "success",

@@ -74,8 +74,6 @@ search.get('/search', async (c) => {
     }
 
     const location = getLocation()
-    console.log('Debug: Location preference:', locationPreference);
-    console.log('Debug: Location filter:', location);
    
 
     let users: any[] = []
@@ -85,11 +83,14 @@ search.get('/search', async (c) => {
     if(genderPreference === 'ANY' ){
 
         //  если пользователь предпочел любой пол и поиск не по радиусу  то ищем всех пользователей которые прошли создание анкет и соответсвуют искомому возрастному диапазону
-       users = await prisma.user.findMany(
+               users = await prisma.user.findMany(
         {
             where: {
                 isNew : false,
                 isPreferences: true,
+                id: {
+                    not: dbUser.id
+                },
                 profile: {
                     age: {
                         gte: minAge,
@@ -104,14 +105,16 @@ search.get('/search', async (c) => {
                 preferences: true
             }
         }
-       )
-       console.log('Debug: Regular search results count (ANY gender):', users.length);
+               )
     } else {
           //  если пользователь предпочел определенный пол  то ищем всех пользователей которые прошли создание анкет и соответсвуют искомому возрастному диапазону
         users = await prisma.user.findMany({
             where: {
                 isNew : false,
                 isPreferences: true,
+                id: {
+                    not: dbUser.id
+                },
                 profile: {
                     gender: genderPreference,
                     age: {
@@ -127,20 +130,13 @@ search.get('/search', async (c) => {
                 preferences: true
             }
         })
-        console.log('Debug: Regular search results count (specific gender):', users.length);
     }
 } else {
 
 
     // если выбран поиск по радиусу то делаем запрос с расчетом точного расстояния
     // сначала проверяем если координаты не указаны или радиус не указан то возвращаем ошибку
-    console.log('Debug: User profile:', dbUser.profile);
     if (!dbUser.profile?.latitude || !dbUser.profile?.longitude || !maxDistance) {
-        console.log('Debug: User location missing', {
-            latitude: dbUser.profile?.latitude,
-            longitude: dbUser.profile?.longitude,
-            maxDistance
-        });
         return c.json({ error: 'User location not found' }, 404);
     }
     
@@ -148,10 +144,6 @@ search.get('/search', async (c) => {
     if (isNaN(dbUser.profile.latitude) || isNaN(dbUser.profile.longitude) || 
         dbUser.profile.latitude < -90 || dbUser.profile.latitude > 90 ||
         dbUser.profile.longitude < -180 || dbUser.profile.longitude > 180) {
-        console.log('Debug: Invalid coordinates', {
-            latitude: dbUser.profile.latitude,
-            longitude: dbUser.profile.longitude
-        });
         return c.json({ error: 'Invalid user coordinates' }, 400);
     }
     
@@ -161,7 +153,7 @@ search.get('/search', async (c) => {
     const lat0 = dbUser.profile.latitude;
     const lon0 = dbUser.profile.longitude;
     
-    console.log('Debug: User coordinates:', { lat0, lon0, maxDistance });
+
     
     // Вычисляем bounding box
     const latDelta = radiusKm / earthRadius * (180 / Math.PI);
@@ -176,14 +168,20 @@ search.get('/search', async (c) => {
     const filters: Prisma.Sql[] = [
         Prisma.sql`u."isNew" = false`,
         Prisma.sql`u."isPreferences" = true`,
-        Prisma.sql`p."age" BETWEEN ${minAge} AND ${maxAge}`,
-        Prisma.sql`p."latitude" BETWEEN ${minLat} AND ${maxLat}`,
-        Prisma.sql`p."longitude" BETWEEN ${minLon} AND ${maxLon}`
+        Prisma.sql`u.id != ${dbUser.id}`,
+        Prisma.sql`p."age" BETWEEN ${minAge} AND ${maxAge}`
     ];
     
+    // Добавляем фильтр по полу если нужно
     if (genderPreference !== "ANY") {
         filters.push(Prisma.sql`p."gender" = ${genderPreference}::"Gender"`);
     }
+    
+    // Добавляем фильтр по координатам только для пользователей с координатами
+    filters.push(Prisma.sql`p."latitude" IS NOT NULL`);
+    filters.push(Prisma.sql`p."longitude" IS NOT NULL`);
+    filters.push(Prisma.sql`p."latitude" BETWEEN ${minLat} AND ${maxLat}`);
+    filters.push(Prisma.sql`p."longitude" BETWEEN ${minLon} AND ${maxLon}`);
     
     const whereClause = Prisma.join(filters, " AND ");
     
@@ -235,12 +233,9 @@ search.get('/search', async (c) => {
             ORDER BY distance;
         `;
     } catch (error) {
-        console.error('Debug: SQL query error:', error);
+        console.error('SQL query error:', error);
         return c.json({ error: 'Database query failed' }, 500);
     }
-    
-    console.log('Debug: Raw SQL search results count:', users.length);
-    console.log('Debug: First user sample:', users[0]);
 
 }
 
@@ -257,9 +252,6 @@ search.get('/search', async (c) => {
     let data: any[] = []
 
     for(const user of users){
-        if(user.id === dbUser.id){
-            continue;
-        }
 
         // Для поиска по радиусу нужно получить фотографии отдельно
         let userPhotos: any[] = []
@@ -277,24 +269,59 @@ search.get('/search', async (c) => {
 
         let compliance = 70;
 
-        if(smokingPreference === "ACCEPTABLE" && (user.smoking === "OCCASIONALLY" || user.smoking === "REGULARLY")){
+        // Получаем данные профиля в зависимости от типа поиска
+        let userSmoking, userDrinking, userAge, userCity, userCountry, userGender, userInterests, userBio;
+        
+        if(locationPreference === 'NEARBY') {
+            // Для поиска по радиусу данные приходят из raw SQL
+            userSmoking = user.smoking;
+            userDrinking = user.drinking;
+            userAge = user.age;
+            userCity = user.city;
+            userCountry = user.country;
+            userGender = user.gender;
+            userInterests = user.interests;
+            userBio = user.bio;
+        } else {
+            // Для обычного поиска данные приходят из Prisma с вложенными объектами
+            userSmoking = user.profile?.smoking;
+            userDrinking = user.profile?.drinking;
+            userAge = user.profile?.age;
+            userCity = user.profile?.city;
+            userCountry = user.profile?.country;
+            userGender = user.profile?.gender;
+            userInterests = user.profile?.interests;
+            userBio = user.profile?.bio;
+        }
+
+        if(smokingPreference === "ACCEPTABLE" && (userSmoking === "OCCASIONALLY" || userSmoking === "REGULARLY")){
             compliance += 10;
-        } else if (smokingPreference === "UNACCEPTABLE" && (user.smoking === "NEVER" || user.smoking === "QUIT" )){
+        } else if (smokingPreference === "UNACCEPTABLE" && (userSmoking === "NEVER" || userSmoking === "QUIT" )){
             compliance += 10;
-        } else if (smokingPreference === "NEUTRAL" && (user.smoking === "NEVER" || user.smoking === "QUIT" || user.smoking === "PREFER_NOT_TO_SAY")){
+        } else if (smokingPreference === "NEUTRAL" && (userSmoking === "NEVER" || userSmoking === "QUIT" || userSmoking === "PREFER_NOT_TO_SAY")){
             compliance += 10;
         }
 
-        if(drinkingPreference === "ACCEPTABLE" && (user.drinking === "OCCASIONALLY" || user.drinking === "REGULARLY")){
+        if(drinkingPreference === "ACCEPTABLE" && (userDrinking === "OCCASIONALLY" || userDrinking === "REGULARLY")){
             compliance += 10;
-        } else if (drinkingPreference === "UNACCEPTABLE" && (user.drinking === "NEVER" || user.drinking === "QUIT" )){
+        } else if (drinkingPreference === "UNACCEPTABLE" && (userDrinking === "NEVER" || userDrinking === "QUIT" )){
             compliance += 10;
-        } else if (drinkingPreference === "NEUTRAL" && (user.drinking === "NEVER" || user.drinking === "QUIT" || user.drinking === "PREFER_NOT_TO_SAY")){
+        } else if (drinkingPreference === "NEUTRAL" && (userDrinking === "NEVER" || userDrinking === "QUIT" || userDrinking === "PREFER_NOT_TO_SAY")){
             compliance += 10;
+        }
+
+        // Проверяем структуру данных пользователя
+        let userDatingGoals = [];
+        if(locationPreference === 'NEARBY') {
+            // Для поиска по радиусу данные приходят из raw SQL
+            userDatingGoals = user.datingGoalPreference || [];
+        } else {
+            // Для обычного поиска данные приходят из Prisma с вложенными объектами
+            userDatingGoals = user.preferences?.datingGoalPreference || [];
         }
 
         for(const goal of datingGoalPreference){
-            for(const userGoal of user.datingGoalPreference){
+            for(const userGoal of userDatingGoals){
                 if(goal === userGoal){
                     compliance += 2;
                 } else {
@@ -307,13 +334,13 @@ search.get('/search', async (c) => {
             id: user.id,
             name: user.firstName,
             lastName: user.lastName,
-            age: user.age,
-            city: user.city,
-            country: user.country,
-            gender: user.gender,
+            age: userAge,
+            city: userCity,
+            country: userCountry,
+            gender: userGender,
             photo: userPhotos.map(p => {return {url: p.url, isMain: p.isMain}}),
-            interests: user.interests,
-            bio: user.bio,
+            interests: userInterests,
+            bio: userBio,
             distance: user.distance,
             compliance: compliance
         })
@@ -391,6 +418,8 @@ search.get('/search', async (c) => {
 if(data.length === 0){
     return c.json({ message: 'success', users: [] }, 200)
 }
+
+
 
 
 return c.json({ message: 'success', data: data }, 200)

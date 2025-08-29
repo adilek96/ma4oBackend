@@ -6,20 +6,27 @@ import { randomUUID } from "crypto"
 const uploadPhoto = new Hono()
 
 uploadPhoto.post("/user/photo/upload", async (c) => {
+  console.log("Начинается загрузка фотографий")
   const storageUrl = process.env.BLOB_STORAGE_URL
   try {
     const user = (c as any).get("user")
     if (!user) return c.json({ error: "Unauthorized" }, 401)
+
+    console.log("Пользователь получен")
 
     const dbUser = await prisma.user.findUnique({
       where: { telegramId: user.userId },
     })
     if (!dbUser) return c.json({ error: "User not found" }, 404)
 
+    console.log("Пользователь найден")
+
     const profile = await prisma.profile.findUnique({
       where: { userId: dbUser.id },
     })
     if (!profile) return c.json({ error: "Profile not found" }, 400)
+
+    console.log("Профиль получен")
 
     const body = await c.req.parseBody()
 
@@ -44,7 +51,7 @@ uploadPhoto.post("/user/photo/upload", async (c) => {
     const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"]
     const maxSize = 5 * 1024 * 1024 // 5MB
 
-
+    console.log("Файлы получены")
 
 
     // Параллельная обработка файлов

@@ -184,14 +184,14 @@ search.get('/search', async (c) => {
 
 }
 
-
+console.log(users)
 
 //  если никто не найден то воращаем пустой обьект
     if(users.length === 0){
         return c.json({ message: 'success', users: [] }, 200)
     }
     
-
+ 
     // далее создаем новый обьект с данными пользователя и его анкеты
     const data = users.map((user) => {
         let compliance = 70;
@@ -228,13 +228,13 @@ search.get('/search', async (c) => {
 //   MARRIAGE
 //   NETWORKING
 
-        for(const goal of datingGoalPreference){
-            for(const userGoal of user.preferences.datingGoal){
-                if(goal === userGoal){
-                    compliance += 2;
-                }
-            }
-        }
+        // for(const goal of datingGoalPreference){
+        //     for(const userGoal of user.preferences.datingGoal){
+        //         if(goal === userGoal){
+        //             compliance += 2;
+        //         }
+        //     }
+        // }
 
 
 
@@ -258,7 +258,7 @@ search.get('/search', async (c) => {
     
     
 
-
+console.log(data)
 
 return c.json({ message: 'success', data: data }, 200)
 

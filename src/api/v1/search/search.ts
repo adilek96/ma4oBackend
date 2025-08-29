@@ -99,6 +99,7 @@ search.get('/search', async (c) => {
             include: {
                 profile: true,
                 photos: true,
+                preferences: true
             }
         }
        )
@@ -119,7 +120,8 @@ search.get('/search', async (c) => {
             },
             include: {
                 profile: true,
-                photos: true
+                photos: true,
+                preferences: true
             }
         })
     }
@@ -173,6 +175,8 @@ search.get('/search', async (c) => {
             ) AS distance
             FROM "users" u
             JOIN "profiles" p ON p."userId" = u."id"
+            JOIN "preferences" pr ON pr."userId" = u."id"
+            JOIN "photos" ph ON ph."userId" = u."id"
             WHERE ${whereClause}
         ) sub
         WHERE sub.distance <= ${maxDistance}
@@ -184,7 +188,7 @@ search.get('/search', async (c) => {
 
 }
 
-console.log(users)
+
 
 //  если никто не найден то воращаем пустой обьект
     if(users.length === 0){
@@ -193,20 +197,23 @@ console.log(users)
     
  
     // далее создаем новый обьект с данными пользователя и его анкеты
-    const data = users.map((user) => {
+
+    let data: any[] = []
+
+    for(const user of users){
+
+       
+
+        if(user.id === dbUser.id){
+            continue;
+        }
+        if(user.photos.length === 0){
+            continue;
+        }
+
         let compliance = 70;
 
-        // NEVER
-        // OCCASIONALLY
-        // REGULARLY
-        // QUIT
-        // PREFER_NOT_TO_SAY
-
-        // ACCEPTABLE
-        // UNACCEPTABLE
-        // NEUTRAL
-
-        if(smokingPreference === "ACCEPTABLE" && (user.profile.smoking === "OCCASIONALLY" || user.profile.smoking === "REGULARLY")){
+            if(smokingPreference === "ACCEPTABLE" && (user.profile.smoking === "OCCASIONALLY" || user.profile.smoking === "REGULARLY")){
             compliance += 10;
         } else if (smokingPreference === "UNACCEPTABLE" && (user.profile.smoking === "NEVER" || user.profile.smoking === "QUIT" )){
             compliance += 10;
@@ -221,44 +228,109 @@ console.log(users)
         } else if (drinkingPreference === "NEUTRAL" && (user.profile.drinking === "NEVER" || user.profile.drinking === "QUIT" || user.profile.drinking === "PREFER_NOT_TO_SAY")){
             compliance += 10;
         }
+
         
-//   RELATIONSHIP
-//   FRIENDSHIP
-//   CASUAL
-//   MARRIAGE
-//   NETWORKING
 
-        // for(const goal of datingGoalPreference){
-        //     for(const userGoal of user.preferences.datingGoal){
-        //         if(goal === userGoal){
-        //             compliance += 2;
-        //         }
-        //     }
-        // }
+        for(const goal of datingGoalPreference){
+            for(const userGoal of user.preferences.datingGoalPreference){
+                if(goal === userGoal){
+                    compliance += 2;
+                } else {
+                    compliance -= 2;
+                }
+            }
 
-
-
-
-        return {
-            id: user.id,
-            name: user.name,
-            lastName: user.lastName,
-            age: user.profile.age,
-            city: user.profile.city,
-            country: user.profile.country,
-            gender: user.profile.gender,
-            // @ts-ignore
-            photo:  user.photos.map(p => {return {url: p.url, isMain: p.isMain}}),
-            interests: user.profile.interests,
-            bio: user.profile.bio,
-            distance: user.distance,
-            compliance: compliance
         }
-    })
+        // console.log(user)
+
+        data.push({
+                        id: user.id,
+                        name: user.firstName,
+                        lastName: user.lastName,
+                        age: user.profile.age,
+                        city: user.profile.city,
+                        country: user.profile.country,
+                        gender: user.profile.gender,
+                        // @ts-ignore
+                        photo:  user.photos.map(p => {return {url: p.url, isMain: p.isMain}}),
+                        interests: user.profile.interests,
+                        bio: user.profile.bio,
+                        distance: user.distance,
+                        compliance: compliance
+        })
+    }
+
+
+//     const data = users.map((user) => {
+//         let compliance = 70;
+
+//         if(user.id === dbUser.id){
+//             return 
+//         }
+
+//         // NEVER
+//         // OCCASIONALLY
+//         // REGULARLY
+//         // QUIT
+//         // PREFER_NOT_TO_SAY
+
+//         // ACCEPTABLE
+//         // UNACCEPTABLE
+//         // NEUTRAL
+
+//         if(smokingPreference === "ACCEPTABLE" && (user.profile.smoking === "OCCASIONALLY" || user.profile.smoking === "REGULARLY")){
+//             compliance += 10;
+//         } else if (smokingPreference === "UNACCEPTABLE" && (user.profile.smoking === "NEVER" || user.profile.smoking === "QUIT" )){
+//             compliance += 10;
+//         } else if (smokingPreference === "NEUTRAL" && (user.profile.smoking === "NEVER" || user.profile.smoking === "QUIT" || user.profile.smoking === "PREFER_NOT_TO_SAY")){
+//             compliance += 10;
+//         }
+
+//         if(drinkingPreference === "ACCEPTABLE" && (user.profile.drinking === "OCCASIONALLY" || user.profile.drinking === "REGULARLY")){
+//             compliance += 10;
+//         } else if (drinkingPreference === "UNACCEPTABLE" && (user.profile.drinking === "NEVER" || user.profile.drinking === "QUIT" )){
+//             compliance += 10;
+//         } else if (drinkingPreference === "NEUTRAL" && (user.profile.drinking === "NEVER" || user.profile.drinking === "QUIT" || user.profile.drinking === "PREFER_NOT_TO_SAY")){
+//             compliance += 10;
+//         }
+        
+// //   RELATIONSHIP
+// //   FRIENDSHIP
+// //   CASUAL
+// //   MARRIAGE
+// //   NETWORKING
+
+//         // for(const goal of datingGoalPreference){
+//         //     for(const userGoal of user.preferences.datingGoal){
+//         //         if(goal === userGoal){
+//         //             compliance += 2;
+//         //         }
+//         //     }
+//         // }
+
+
+
+
+//         return {
+//             id: user.id,
+//             name: user.name,
+//             lastName: user.lastName,
+//             age: user.profile.age,
+//             city: user.profile.city,
+//             country: user.profile.country,
+//             gender: user.profile.gender,
+//             // @ts-ignore
+//             photo:  user.photos.map(p => {return {url: p.url, isMain: p.isMain}}),
+//             interests: user.profile.interests,
+//             bio: user.profile.bio,
+//             distance: user.distance,
+//             compliance: compliance
+//         }
+//     })
     
     
 
-console.log(data)
+
 
 return c.json({ message: 'success', data: data }, 200)
 

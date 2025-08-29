@@ -74,6 +74,8 @@ search.get('/search', async (c) => {
     }
 
     const location = getLocation()
+    console.log('Debug: Location preference:', locationPreference);
+    console.log('Debug: Location filter:', location);
    
 
     let users: any[] = []
@@ -103,6 +105,7 @@ search.get('/search', async (c) => {
             }
         }
        )
+       console.log('Debug: Regular search results count (ANY gender):', users.length);
     } else {
           //  если пользователь предпочел определенный пол  то ищем всех пользователей которые прошли создание анкет и соответсвуют искомому возрастному диапазону
         users = await prisma.user.findMany({
@@ -124,14 +127,32 @@ search.get('/search', async (c) => {
                 preferences: true
             }
         })
+        console.log('Debug: Regular search results count (specific gender):', users.length);
     }
 } else {
 
 
     // если выбран поиск по радиусу то делаем запрос с расчетом точного расстояния
     // сначала проверяем если координаты не указаны или радиус не указан то возвращаем ошибку
+    console.log('Debug: User profile:', dbUser.profile);
     if (!dbUser.profile?.latitude || !dbUser.profile?.longitude || !maxDistance) {
+        console.log('Debug: User location missing', {
+            latitude: dbUser.profile?.latitude,
+            longitude: dbUser.profile?.longitude,
+            maxDistance
+        });
         return c.json({ error: 'User location not found' }, 404);
+    }
+    
+    // Проверяем корректность координат
+    if (isNaN(dbUser.profile.latitude) || isNaN(dbUser.profile.longitude) || 
+        dbUser.profile.latitude < -90 || dbUser.profile.latitude > 90 ||
+        dbUser.profile.longitude < -180 || dbUser.profile.longitude > 180) {
+        console.log('Debug: Invalid coordinates', {
+            latitude: dbUser.profile.latitude,
+            longitude: dbUser.profile.longitude
+        });
+        return c.json({ error: 'Invalid user coordinates' }, 400);
     }
     
     const earthRadius = 6371; // км
@@ -139,6 +160,8 @@ search.get('/search', async (c) => {
     
     const lat0 = dbUser.profile.latitude;
     const lon0 = dbUser.profile.longitude;
+    
+    console.log('Debug: User coordinates:', { lat0, lon0, maxDistance });
     
     // Вычисляем bounding box
     const latDelta = radiusKm / earthRadius * (180 / Math.PI);
@@ -164,27 +187,60 @@ search.get('/search', async (c) => {
     
     const whereClause = Prisma.join(filters, " AND ");
     
-    // SQL запрос с расчетом точного расстояния
-    users = await prisma.$queryRaw`
-        SELECT * FROM (
-            SELECT p.*, u.*, (
-                6371 * acos(
-                    cos(radians(${lat0})) * cos(radians(p."latitude")) * cos(radians(p."longitude") - radians(${lon0}))
-                    + sin(radians(${lat0})) * sin(radians(p."latitude"))
-                )
-            ) AS distance
+    try {
+        // SQL запрос с расчетом точного расстояния
+        users = await prisma.$queryRaw`
+            SELECT 
+                u.id,
+                u."firstName",
+                u."lastName",
+                u."telegramId",
+                u."isNew",
+                u."isPreferences",
+                p.age,
+                p.city,
+                p.country,
+                p.gender,
+                p.latitude,
+                p.longitude,
+                p.interests,
+                p.bio,
+                p.smoking,
+                p.drinking,
+                pr."datingGoalPreference",
+                (
+                    6371 * acos(
+                        GREATEST(-1, LEAST(1, 
+                            cos(radians(${lat0})) * cos(radians(p.latitude)) * cos(radians(p.longitude) - radians(${lon0}))
+                            + sin(radians(${lat0})) * sin(radians(p.latitude))
+                        ))
+                    )
+                ) AS distance
             FROM "users" u
-            JOIN "profiles" p ON p."userId" = u."id"
-            JOIN "preferences" pr ON pr."userId" = u."id"
-            JOIN "photos" ph ON ph."userId" = u."id"
+            JOIN "profiles" p ON p."userId" = u.id
+            JOIN "preferences" pr ON pr."userId" = u.id
             WHERE ${whereClause}
-        ) sub
-        WHERE sub.distance <= ${maxDistance}
-        ORDER BY sub.distance;
-    `;
+            AND p.latitude IS NOT NULL 
+            AND p.longitude IS NOT NULL
+            AND p.latitude BETWEEN -90 AND 90
+            AND p.longitude BETWEEN -180 AND 180
+            AND (
+                6371 * acos(
+                    GREATEST(-1, LEAST(1, 
+                        cos(radians(${lat0})) * cos(radians(p.latitude)) * cos(radians(p.longitude) - radians(${lon0}))
+                        + sin(radians(${lat0})) * sin(radians(p.latitude))
+                    ))
+                )
+            ) <= ${maxDistance}
+            ORDER BY distance;
+        `;
+    } catch (error) {
+        console.error('Debug: SQL query error:', error);
+        return c.json({ error: 'Database query failed' }, 500);
+    }
     
-  
-    
+    console.log('Debug: Raw SQL search results count:', users.length);
+    console.log('Debug: First user sample:', users[0]);
 
 }
 
@@ -201,62 +257,65 @@ search.get('/search', async (c) => {
     let data: any[] = []
 
     for(const user of users){
-
-       
-
         if(user.id === dbUser.id){
             continue;
         }
-        if(user.photos.length === 0){
+
+        // Для поиска по радиусу нужно получить фотографии отдельно
+        let userPhotos: any[] = []
+        if(locationPreference === 'NEARBY') {
+            userPhotos = await prisma.photo.findMany({
+                where: { userId: user.id }
+            })
+        } else {
+            userPhotos = user.photos || []
+        }
+
+        if(userPhotos.length === 0){
             continue;
         }
 
         let compliance = 70;
 
-            if(smokingPreference === "ACCEPTABLE" && (user.profile.smoking === "OCCASIONALLY" || user.profile.smoking === "REGULARLY")){
+        if(smokingPreference === "ACCEPTABLE" && (user.smoking === "OCCASIONALLY" || user.smoking === "REGULARLY")){
             compliance += 10;
-        } else if (smokingPreference === "UNACCEPTABLE" && (user.profile.smoking === "NEVER" || user.profile.smoking === "QUIT" )){
+        } else if (smokingPreference === "UNACCEPTABLE" && (user.smoking === "NEVER" || user.smoking === "QUIT" )){
             compliance += 10;
-        } else if (smokingPreference === "NEUTRAL" && (user.profile.smoking === "NEVER" || user.profile.smoking === "QUIT" || user.profile.smoking === "PREFER_NOT_TO_SAY")){
-            compliance += 10;
-        }
-
-        if(drinkingPreference === "ACCEPTABLE" && (user.profile.drinking === "OCCASIONALLY" || user.profile.drinking === "REGULARLY")){
-            compliance += 10;
-        } else if (drinkingPreference === "UNACCEPTABLE" && (user.profile.drinking === "NEVER" || user.profile.drinking === "QUIT" )){
-            compliance += 10;
-        } else if (drinkingPreference === "NEUTRAL" && (user.profile.drinking === "NEVER" || user.profile.drinking === "QUIT" || user.profile.drinking === "PREFER_NOT_TO_SAY")){
+        } else if (smokingPreference === "NEUTRAL" && (user.smoking === "NEVER" || user.smoking === "QUIT" || user.smoking === "PREFER_NOT_TO_SAY")){
             compliance += 10;
         }
 
-        
+        if(drinkingPreference === "ACCEPTABLE" && (user.drinking === "OCCASIONALLY" || user.drinking === "REGULARLY")){
+            compliance += 10;
+        } else if (drinkingPreference === "UNACCEPTABLE" && (user.drinking === "NEVER" || user.drinking === "QUIT" )){
+            compliance += 10;
+        } else if (drinkingPreference === "NEUTRAL" && (user.drinking === "NEVER" || user.drinking === "QUIT" || user.drinking === "PREFER_NOT_TO_SAY")){
+            compliance += 10;
+        }
 
         for(const goal of datingGoalPreference){
-            for(const userGoal of user.preferences.datingGoalPreference){
+            for(const userGoal of user.datingGoalPreference){
                 if(goal === userGoal){
                     compliance += 2;
                 } else {
                     compliance -= 2;
                 }
             }
-
         }
-        // console.log(user)
 
         data.push({
-                        id: user.id,
-                        name: user.firstName,
-                        lastName: user.lastName,
-                        age: user.profile.age,
-                        city: user.profile.city,
-                        country: user.profile.country,
-                        gender: user.profile.gender,
-                        // @ts-ignore
-                        photo:  user.photos.map(p => {return {url: p.url, isMain: p.isMain}}),
-                        interests: user.profile.interests,
-                        bio: user.profile.bio,
-                        distance: user.distance,
-                        compliance: compliance
+            id: user.id,
+            name: user.firstName,
+            lastName: user.lastName,
+            age: user.age,
+            city: user.city,
+            country: user.country,
+            gender: user.gender,
+            photo: userPhotos.map(p => {return {url: p.url, isMain: p.isMain}}),
+            interests: user.interests,
+            bio: user.bio,
+            distance: user.distance,
+            compliance: compliance
         })
     }
 
@@ -329,7 +388,9 @@ search.get('/search', async (c) => {
 //     })
     
     
-
+if(data.length === 0){
+    return c.json({ message: 'success', users: [] }, 200)
+}
 
 
 return c.json({ message: 'success', data: data }, 200)

@@ -229,7 +229,7 @@ search.get('/search', async (c) => {
 //   NETWORKING
 
         for(const goal of datingGoalPreference){
-            for(const userGoal of user.profile.datingGoal){
+            for(const userGoal of user.preferences.datingGoal){
                 if(goal === userGoal){
                     compliance += 2;
                 }

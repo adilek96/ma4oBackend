@@ -50,9 +50,14 @@ uploadPhoto.post("/user/photo/upload", async (c) => {
     // Параллельная обработка файлов
     const createdPhotos = await Promise.all(
       uploadedFiles.map(async (file) => {
-        if (!(file instanceof File)) return null
-        if (!allowedTypes.includes(file.type)) return null
-        if (file.size > maxSize) return null
+        if (!file || !file.type || !file.arrayBuffer) return null
+        if (!file.type || !allowedTypes.includes(file.type)) {
+          console.warn("Unsupported file type:", file.type, file.name)
+          return null
+        }
+        if (file.size > maxSize) {
+          throw new Error("File too large")
+        }
 
         const fileExtension = file.name.split(".").pop()
         const fileName = `${dbUser.id}/${randomUUID()}.${fileExtension}`

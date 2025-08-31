@@ -118,7 +118,7 @@ auth.post('/auth/tg', async (c) => {
     // проверяем есть ли пользователь в базе данных
     const dbSaveUser = await prisma.user.findUnique({
       where: {
-        telegramId: userObj.id,
+        telegramId: BigInt(userObj.id),
       },
     })
 
@@ -127,7 +127,7 @@ auth.post('/auth/tg', async (c) => {
       console.log('пользователь не найден в базе данных, создаем нового')
       await prisma.user.create({
         data: {
-          telegramId: userObj.id,
+          telegramId: BigInt(userObj.id),
           firstName: userObj.first_name,
           username: userObj.username,
           lastName: userObj.last_name,

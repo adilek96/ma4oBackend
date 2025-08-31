@@ -12,21 +12,20 @@ uploadPhoto.post('/user/photo/upload', async (c) => {
     const user = (c as any).get('user')
     if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
-    console.log('Пользователь получен')
+    
 
     const dbUser = await prisma.user.findUnique({
-      where: { telegramId: user.userId },
+      where: { telegramId: BigInt(user.userId) },
     })
     if (!dbUser) return c.json({ error: 'User not found' }, 404)
 
-    console.log('Пользователь найден')
-
+ 
     const profile = await prisma.profile.findUnique({
       where: { userId: dbUser.id },
     })
     if (!profile) return c.json({ error: 'Profile not found' }, 400)
 
-    console.log('Профиль получен')
+ 
 
     const body = await c.req.parseBody()
 

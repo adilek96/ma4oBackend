@@ -21,7 +21,7 @@ me.get('/user/me', async (c) => {
     // тут делаем запрос в БД по userId
     const userData = await prisma.user.findUnique({
       where: {
-        telegramId: Number(user.userId),
+        telegramId: BigInt(user.userId),
       },
       include: {
         profile: true,

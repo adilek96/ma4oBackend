@@ -9,7 +9,7 @@ updatePhoto.patch('/user/photo/update', async (c) => {
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const dbUser = await prisma.user.findUnique({
-    where: { telegramId: user.userId },
+    where: { telegramId: BigInt(user.userId) },
   })
   if (!dbUser) return c.json({ error: 'User not found' }, 404)
 

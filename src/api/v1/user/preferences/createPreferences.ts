@@ -15,7 +15,7 @@ createPreferences.post('/user/preferences/create', async (c) => {
     // Находим пользователя в БД по Telegram ID
     const dbUser = await prisma.user.findUnique({
       where: {
-        telegramId: user.userId,
+        telegramId: BigInt(user.userId),
       },
     })
 

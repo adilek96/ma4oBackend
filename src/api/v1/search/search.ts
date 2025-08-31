@@ -15,7 +15,7 @@ search.get('/search', async (c) => {
   // Находим предпочтения пользователя в БД по Telegram ID
   const dbUser = await prisma.user.findUnique({
     where: {
-      telegramId: user.userId,
+      telegramId: BigInt(user.userId),
     },
     include: {
       preferences: true,

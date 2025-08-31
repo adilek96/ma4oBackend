@@ -13,7 +13,7 @@ createSkip.post('/user/skip/create', async (c) => {
 
   const userDb = await prisma.user.findUnique({
     where: {
-      telegramId: user.userId,
+      telegramId: BigInt(user.userId),
     },
   })
 

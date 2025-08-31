@@ -22,8 +22,7 @@ refresh.post('/auth/refresh', async (c) => {
       expiresIn: '60m',
     })
 
-    // определяем настройки куков в зависимости от окружения
-    const isProduction = process.env.NODE_ENV === 'production'
+  
 
     // устанавливаем куки
     setCookie(c, 'access_token', accessToken, {

@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { prisma } from '../../../lib/prisma.js'
+import { serializeBigInt } from '../../../lib/utils.js'
 
 const me = new Hono()
 
@@ -36,8 +37,11 @@ me.get('/user/me', async (c) => {
       return c.json({ error: 'User not found' }, 404)
     }
 
+    // Преобразуем BigInt в строки перед отправкой
+    const serializedData = serializeBigInt(userData)
+
     return c.json({
-      data: userData,
+      data: serializedData,
     })
   } catch (error) {
     console.error('Me route error:', error)

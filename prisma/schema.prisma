@@ -12,7 +12,7 @@ datasource db {
 
 model User {
   id            String  @id @default(cuid())
-  telegramId    Int     @unique
+  telegramId    BigInt  @unique
   username      String? @unique
   firstName     String
   lastName      String?
@@ -125,11 +125,11 @@ model Photo {
 }
 
 model Match {
-  id         String @id @default(cuid())
-  senderId   String
-  sender     User   @relation("UserSentMatches", fields: [senderId], references: [id], onDelete: Cascade)
-  receiverId String
-  receiver   User   @relation("UserReceivedMatches", fields: [receiverId], references: [id], onDelete: Cascade)
+  id      String @id @default(cuid())
+  userAId String
+  userA   User   @relation("UserSentMatches", fields: [userAId], references: [id], onDelete: Cascade)
+  userBId String
+  userB   User   @relation("UserReceivedMatches", fields: [userBId], references: [id], onDelete: Cascade)
 
   isMutual Boolean @default(false)
   chatUrl  String? // Ссылка на чат в Telegram
@@ -137,7 +137,7 @@ model Match {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([senderId, receiverId])
+  @@unique([userAId, userBId])
   @@map("matches")
 }
 
